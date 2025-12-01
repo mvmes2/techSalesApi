@@ -23,9 +23,5 @@ export class UpdateUserBody {
     @Length(11, 12)
     @IsOptional()
     @IsString()
-    user_cpf?: string;
-    @ApiProperty({ example: '1', description: 'IsOptional(not required), numbers(0, 1, 2, 3)' })
-    @IsOptional()
-    @IsNumber()
-    user_level?: number;
+    cpf?: string;
 }

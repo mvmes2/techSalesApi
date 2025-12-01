@@ -2,8 +2,9 @@ import { Company } from "@app/entities/company/company";
 import { User } from "@app/entities/user/user";
 import { CompanyRepository } from "@app/repositories/company/company-repository";
 import { UserRepository } from "@app/repositories/user/user-repository";
-import { generateNewJwtShadowd } from "@helpers/generateJwtShadowed";
+import { generateNewJwtShadowed } from "@helpers/generateJwtShadowed";
 import { Injectable } from "@nestjs/common";
+import { CompanyOrUserNotExists } from "./errors/company-user-not-exists-error";
 
 
 export interface getCompanyAndUserInfoRequest {
@@ -14,6 +15,24 @@ export interface getCompanyAndUserInfoRequest {
 export interface getCompanyAndUserInfoResponse {
     user: string;
     company: string;
+}
+
+
+export class UserViewModel {
+    static toHTTP (user: User) {
+        return {
+            id: user.id,
+            name: user.user_name,
+            company_id: user.company_id,
+            company: user.company,
+            email: user.user_email.value,
+            created_at: user.created_at,
+            deleted_at: user.deleted_at,
+            user_cpf: user.user_cpf,
+            user_level: user.user_level,
+            sessions: user.sessions,
+        }
+    }
 }
 
 @Injectable()
@@ -27,13 +46,17 @@ export class GetCompanyAndUserInfo {
         
         const companyFound = await this.companyRepository.findById(companyId);
         const userFound = await this.userRepository.findById(userId);
+        
+        const userToSign = UserViewModel.toHTTP(userFound);
 
-        console.log('como vem o user encontrado? ', userFound.toPlainObject())
-        console.log('como vem a company encontrado? ', companyFound)
-
-        return {
-            user: generateNewJwtShadowd(userFound.toPlainObject()),
-            company: generateNewJwtShadowd(companyFound)
+        if (!userFound || !companyFound) {
+            throw new CompanyOrUserNotExists()
+        } else {
+            return {
+                user: generateNewJwtShadowed({ userInfos: JSON.stringify(userToSign) }),
+                company: generateNewJwtShadowed({ companyInfos: JSON.stringify(companyFound) })
+            }
         }
+
     }
 }

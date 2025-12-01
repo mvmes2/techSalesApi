@@ -11,6 +11,7 @@ export type RawUser = {
     user_level: number;
     company_id: string;
     created_at: Date;
+    last_recover_pass_token?: string;
     updated_at?: Date | null;
     deleted_at?: Date | null;
     company?: Company;
@@ -80,6 +81,7 @@ export class PrismaUserMapper {
             created_at: raw.created_at,
             updated_at: raw.updated_at,
             deleted_at: raw.deleted_at,
+            last_recover_pass_token: raw.last_recover_pass_token,
             company: company,
             sessions: sessions,
         }, raw.id);

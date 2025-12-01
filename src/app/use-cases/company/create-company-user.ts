@@ -39,6 +39,8 @@ export class CreateCompanyAndUser {
         const { company_name, owner_email, owner_name, cnpj } = request.company;
         const { name, email, password, user_cpf } = request.user;
 
+        
+
         const companyFound = await this.companyRepository.findByCnpj(cnpj);
         
         const userFound = await this.userRepository.findByEmail(email);

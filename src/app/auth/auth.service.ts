@@ -11,6 +11,8 @@ import { SessionService } from "@app/use-cases/session/session.service";
 import { Session } from "@app/entities/session/session";
 import { CONFIGS } from "src/configs/globalConfigs";
 import { addRandomCharsToToken } from "@helpers/overshadowedToken";
+import { generateNewJwtShadowed } from "@helpers/generateJwtShadowed";
+import { UserViewModel } from "@app/use-cases/company/get-company-user-info";
 
 export interface UserTokenSession {
     user_token: string;
@@ -30,17 +32,19 @@ export class AuthService {
 
         try {
             const user = req.user;
-            const payload: UserPayload = {
-                id: user._id,
-                name: user.props.user_name,
-                email: user.props.user_email,
-                company_id: user.props.company_id,
-                company_name: user.props.company.company_name,
-                user_level: user.props.user_level
+
+            const foundUser = await this.userService.getById({ id: user._id });
+
+            const payload: any = {
+                ...foundUser
             }
+
+            const userToSign = UserViewModel.toHTTP(payload.user);
+            const { sessions, ...userWithoutSessions } = userToSign;
+            console.log('como vamos assinar', userWithoutSessions)
             
-            const generatedUserToken = this.jwtService.sign(payload, { secret: process.env.JWT_USER_AUTH_SECRET, expiresIn: CONFIGS.userJwtExpires });
-            const shadowedToken = addRandomCharsToToken(generatedUserToken);
+            const generatedUserToken = generateNewJwtShadowed({ userInfo: JSON.stringify(userWithoutSessions) });
+            const shadowedToken = generatedUserToken
 
             const session = new Session({
                 browser: req.headers['user-agent'],

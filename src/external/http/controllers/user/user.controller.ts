@@ -10,6 +10,11 @@ import { IsPublic } from '@app/auth/decorators/is-public.decorator';
 import { ApiTags } from '@nestjs/swagger';
 import { User } from '@app/entities/user/user';
 import { JwtService } from '@nestjs/jwt';
+import { RecoverPasswordDTO } from '@external/http/dtos/user/recover-password-body';
+import { MailerService } from '@external/mailer/mailer.service';
+import { generateNewJwtShadowed } from '@helpers/generateJwtShadowed';
+import { UpdateUserPasswordAccessTokenBody } from '@external/http/dtos/user/update-password-acess-tokenDTO';
+import { removeRandomCharsFromToken } from '@helpers/overshadowedToken';
 
 interface GetUserByIdWithTokenRequest {
   user: User
@@ -17,7 +22,7 @@ interface GetUserByIdWithTokenRequest {
 @ApiTags('user')
 @Controller('user')
 export class UserController {
-  constructor(private userService: UserService, private jwt: JwtService) {}
+  constructor(private userService: UserService, private jwt: JwtService, private mailerService: MailerService) {}
   @IsPublic()
   @Post()
   async create(@Body() body: CreateUserBody) {
@@ -46,28 +51,77 @@ export class UserController {
     }
   };
 
-//   @Patch(':id')
-//   async update(@Param('id') id: string, @Body() body: UpdateUserBody) {
-//     if (!body || Object.keys(body).length === 0) {
-//       throw new HttpException('At least one of the fields (email, name, or password) must be provided.', HttpStatus.BAD_REQUEST);
-//     }
-//     try {
-//       const { name, email, password } = body;
-//       await this.userService.update({
-//         id,
-//         name,
-//         email,
-//         password
-//       }); 
-//       return;
-//     } catch (error) {
-//       if (error instanceof UserNotFound) {
-//         throw new HttpException('User not found.', HttpStatus.BAD_REQUEST);
-//       } else {
-//         throw error;
-//       }
-//     }
-//   };
+@IsPublic()
+@Post('/recover-password')
+async RecoverPassword(@Body() body: RecoverPasswordDTO) {
+  const { email } = body;
+
+  try {
+    await this.userService.recoverUserPassword({ email });
+    return { message: 'Password recovery email sent successfully.' };
+  } catch (error) {
+    if (error instanceof UserNotFound) {
+      throw new HttpException('User not found.', HttpStatus.NOT_FOUND);
+    }
+    throw error;
+  }
+}
+
+  @Patch(':id')
+  async UpdateUser(@Param('id') id: string, @Body() body: UpdateUserBody) {
+    if (!body || Object.keys(body).length === 0) {
+      throw new HttpException('At least one of the fields (email, name, cpf or password) must be provided.', HttpStatus.BAD_REQUEST);
+    }
+    try {
+      const { name, email, password, cpf } = body;
+      const userToUpdate = {
+        user_id: id,
+        update: {
+          name,
+          email,
+          password,
+          cpf
+        }
+      }
+      await this.userService.userUpdate(userToUpdate);
+      return;
+    } catch (error) {
+      if (error instanceof UserNotFound) {
+        throw new HttpException('User not found.', HttpStatus.BAD_REQUEST);
+      } else {
+        throw error;
+      }
+    }
+  };
+  @IsPublic()
+  @Patch('/public/:id')
+  async PublicUpdateUserPasswordOnly(@Param('id') id: string, @Body() body: UpdateUserPasswordAccessTokenBody) {
+    if (!body || Object.keys(body).length === 0) {
+      throw new HttpException('Field "password" must be provided.', HttpStatus.BAD_REQUEST);
+    }
+    try {
+      const { password, token } = body;
+      const userToUpdate = {
+        user_id: id,
+        token,
+        update: {
+          password
+        }
+      }
+      const canProceed = await this.userService.userCheckRecoverPassToken({ user_id: id, token: token });
+      if (canProceed) {      
+        return await this.userService.userUpdate(userToUpdate);
+      } else {
+        throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      }
+    } catch (error) {
+      if (error instanceof UserNotFound) {
+        throw new HttpException('User not found.', HttpStatus.BAD_REQUEST);
+      } else {
+        throw error;
+      }
+    }
+  };
 
 //   @Get('')
 //   async get(@Request() req: any) {

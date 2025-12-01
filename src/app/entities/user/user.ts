@@ -17,6 +17,7 @@ export interface UserProps {
     created_at: Date;
     updated_at?: Date | null;
     deleted_at?: Date | null;
+    last_recover_pass_token?: string;
   }
 
 export class User {
@@ -98,26 +99,19 @@ export class User {
          this.props.user_level = user_level;
       }
 
+      public get last_recover_pass_token(): string{
+        return this.props.last_recover_pass_token;
+      }
+  
+      public set last_recover_pass_token(last_recover_pass_token: string){
+         this.props.last_recover_pass_token = last_recover_pass_token;
+      }
+
       get sessions(): SessionProps[] | null | undefined {
         return this.props.sessions;
       }
 
       get company(): CompanyProps | null | undefined {
         return this.props.company;
-      }
-
-      toPlainObject() {
-        return {
-          _id: this._id,
-          user_email: this.props.user_email,
-          user_name: this.props.user_name,
-          user_password: this.props.user_password,
-          company_id: this.props.company_id,
-          user_cpf: this.props.user_cpf,
-          user_level: this.props.user_level,
-          created_at: this.props.created_at,
-          updated_at: this.props.updated_at,
-          deleted_at: this.props.deleted_at,
-        };
       }
 }

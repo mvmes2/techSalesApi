@@ -25,7 +25,6 @@ export class PrismaCompanyRepository implements CompanyRepository {
         return PrismaCompanyMapper.toDomain(foundCompany);
     }
     async create(company: Company): Promise<void> {
-        console.log('logando user para create', company)
         const rawCompany = PrismaCompanyMapper.toPrisma(company);
         await this.prismaService.company.create({
             data: rawCompany

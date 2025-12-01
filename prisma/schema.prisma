@@ -14,35 +14,50 @@ datasource db {
 }
 
 model Company {
-  id           String    @id @default(uuid())
-  company_name String
-  cnpj         String    @unique
-  owner_name   String
-  owner_email  String
-  product_key  String?
-  created_at   DateTime  @default(now())
-  deleted_at   DateTime?
-  updated_at   DateTime?
-  users        User[]
-  sessions     Session[]
+  id                        String                     @id @default(uuid())
+  company_name              String
+  cnpj                      String                     @unique
+  owner_name                String
+  owner_email               String
+  product_key               String?
+  created_at                DateTime                   @default(now())
+  deleted_at                DateTime?
+  updated_at                DateTime?
+  users                     User[]
+  sessions                  Session[]
+  products                  Product[]
+  product_types             Product_type[]
+  service_order_items       Service_order_item[]
+  Service_order_charts      Service_order_chart[]
+  Product_charts            Product_chart[]
+  Service_order_chart_items Service_order_chart_item[]
+  Product_chart_items       Product_chart_item[]
+  Customers                 Customer[]
+  Sales                     Sale[]
+  Payment                   Payment[]
+  Discount                  Discount[]
+  Code_bar                  Code_bar[]
 
   @@index([company_name], name: "company_name_index")
   @@index([cnpj], name: "company_cnpj_index")
 }
 
 model User {
-  id            String    @id @default(uuid())
-  company_id    String
-  company       Company   @relation(fields: [company_id], references: [id])
-  user_name     String
-  user_email    String
-  user_password String
-  user_cpf      String
-  user_level    Int       @default(1)
-  sessions      Session[]
-  created_at    DateTime  @default(now())
-  updated_at    DateTime?
-  deleted_at    DateTime?
+  id                      String    @id @default(uuid())
+  company_id              String
+  company                 Company   @relation(fields: [company_id], references: [id])
+  user_name               String
+  user_email              String
+  user_password           String
+  user_cpf                String
+  user_level              Int       @default(1)
+  sessions                Session[]
+  created_at              DateTime  @default(now())
+  updated_at              DateTime?
+  deleted_at              DateTime?
+  last_recover_pass_token String?   @db.VarChar(999)
+  Sales                   Sale[]
+  Payment                 Payment[]
 
   @@unique([company_id, user_email], name: "unique_company_user_email")
   @@unique([company_id, user_cpf], name: "unique_company_user_cpf")
@@ -57,7 +72,7 @@ model Session {
   company    Company   @relation(fields: [company_id], references: [id])
   user_id    String
   user       User      @relation(fields: [user_id], references: [id])
-  token      String // VARCHAR(999)
+  token      String    @db.VarChar(999)
   ip_address String
   location   String
   browser    String
@@ -67,4 +82,244 @@ model Session {
 
   @@index([user_id], name: "user_id_index")
   @@index([company_id], name: "company_id_index")
+}
+
+model Customer {
+  id                      String    @id @default(uuid())
+  company_id              String
+  company                 Company   @relation(fields: [company_id], references: [id])
+  customer_name           String
+  customer_email          String
+  customer_address        String?
+  customer_address_number String?
+  customer_neighborhood   String?
+  customer_city           String?
+  customer_state          String?
+  customer_cep            String?
+  customer_phone_number   String?
+  customer_cpf            String?
+  created_at              DateTime  @default(now())
+  updated_at              DateTime?
+  deleted_at              DateTime?
+  sales                   Sale[]
+  payments                Payment[]
+
+  @@unique([company_id, customer_email], name: "unique_company_customer_email")
+  @@unique([company_id, customer_cpf], name: "unique_company_customer_cpf")
+  @@index([company_id], name: "company_id_index")
+  @@index([company_id, customer_email], name: "customer_email_index")
+  @@index([company_id, customer_cpf], name: "customer_cpf_index")
+}
+
+model Discount {
+  id            String    @id @default(uuid())
+  company_id    String
+  company       Company   @relation(fields: [company_id], references: [id])
+  discount_type String //Promoção | Bônus | Manual  -> adicionar manualmente em um select no front apenas essas opções.  
+  description   String    @db.VarChar(150)
+  value         Float?    @default(0.00)
+  percent       Float?    @default(0.00)
+  created_by    String
+  start_at      DateTime
+  end_at        DateTime
+  created_at    DateTime
+  deleted_at    DateTime?
+  updated_at    DateTime?
+  products      Product[]
+  Sale          Sale[]
+
+  @@index([company_id], name: "company_id_index")
+}
+
+model Product_type {
+  id         String    @id @default(uuid())
+  company_id String
+  company    Company   @relation(fields: [company_id], references: [id])
+  type_name  String    @unique @db.VarChar(150)
+  products   Product[]
+  created_at DateTime
+  deleted_at DateTime?
+  updated_at DateTime?
+
+  @@unique([company_id, type_name], name: "unique_company_type_name")
+  @@index([company_id], name: "company_id_index")
+}
+
+model Code_bar {
+  id              String    @id @default(uuid())
+  company_id      String
+  company         Company   @relation(fields: [company_id], references: [id])
+  code_bar_number BigInt
+  product_id      String?   @unique
+  product         Product?  @relation(fields: [product_id], references: [id])
+  created_at      DateTime  @default(now())
+  updated_at      DateTime?
+  deleted_at      DateTime?
+
+  @@unique([company_id, code_bar_number], name: "unique_company_codeBar_number")
+  @@unique([company_id, product_id], name: "unique_company_productId_to_codeBar")
+  @@index([code_bar_number], name: "code_bar_number_index")
+  @@index([company_id], name: "company_id_index")
+}
+
+model Product {
+  id                 String               @id @default(uuid())
+  company_id         String
+  company            Company              @relation(fields: [company_id], references: [id])
+  search_number      BigInt?
+  serial_number      BigInt?
+  code_bar_id        String?
+  code_bar           Code_bar?
+  product_type_id    String?
+  productType        Product_type?        @relation(fields: [product_type_id], references: [id])
+  product_name       String               @db.VarChar(255)
+  product_brand      String?              @db.VarChar(255)
+  product_weight     Float?
+  description        String?              @db.VarChar(255)
+  bought_value       Float?
+  sell_value         Float
+  discount_id        String?
+  discount           Discount?            @relation(fields: [discount_id], references: [id])
+  product_img        String?              @db.VarChar(255)
+  validity           DateTime?
+  packaging_date     DateTime?
+  quantity           Int?                 @default(1)
+  created_at         DateTime
+  updated_at         DateTime?
+  deleted_at         DateTime?
+  Product_chart_item Product_chart_item[]
+
+  @@unique([company_id, serial_number], name: "unique_company_serial_number")
+  @@index([company_id], name: "company_id_index")
+  @@index([company_id, product_type_id], name: "company_product_type_id_index")
+  @@index([company_id, discount_id], name: "company_discount_id_index")
+  @@index([company_id, search_number], name: "search_number_index")
+  @@index([company_id, code_bar_id], name: "code_bar_id_index")
+  @@index([company_id, product_name], name: "product_name_index")
+  @@index([company_id, serial_number], name: "serial_number_index")
+}
+
+model Service_order_item {
+  id                       String                     @id @default(uuid())
+  company_id               String
+  company                  Company                    @relation(fields: [company_id], references: [id])
+  service_name             String                     @db.VarChar(150)
+  description              String                     @db.VarChar(255)
+  value                    Float
+  created_at               DateTime
+  updated_at               DateTime?
+  deleted_at               DateTime?
+  Service_order_chart_item Service_order_chart_item[]
+
+  @@index([company_id], name: "company_id_index")
+}
+
+model Service_order_chart_item {
+  id                     String              @id @default(uuid())
+  company_id             String
+  company                Company             @relation(fields: [company_id], references: [id])
+  service_order_chart_id String
+  service_order_chart    Service_order_chart @relation(fields: [service_order_chart_id], references: [id])
+  service_order_item_id  String
+  service_order_item     Service_order_item  @relation(fields: [service_order_item_id], references: [id])
+  quantity               Int                 @default(1)
+
+  @@index([company_id], name: "company_id_index")
+}
+
+model Service_order_chart {
+  id                  String                     @id @default(uuid())
+  company_id          String
+  company             Company                    @relation(fields: [company_id], references: [id])
+  service_name        String                     @db.VarChar(150)
+  description         String                     @db.VarChar(255)
+  value               Float
+  created_at          DateTime
+  updated_at          DateTime?
+  deleted_at          DateTime?
+  service_order_items Service_order_chart_item[]
+  product_chart_items Product_chart_item[]
+  Sale                Sale?
+
+  @@index([company_id], name: "company_id_index")
+}
+
+model Product_chart_item {
+  id                     String               @id @default(uuid())
+  company_id             String
+  company                Company              @relation(fields: [company_id], references: [id])
+  product_chart_id       String
+  product_chart          Product_chart        @relation(fields: [product_chart_id], references: [id])
+  product_id             String
+  product                Product              @relation(fields: [product_id], references: [id])
+  quantity               Int                  @default(1)
+  service_order_chart_id String?
+  Service_order_chart    Service_order_chart? @relation(fields: [service_order_chart_id], references: [id])
+
+  @@index([company_id], name: "company_id_index")
+}
+
+model Product_chart {
+  id         String               @id @default(uuid())
+  company_id String
+  company    Company              @relation(fields: [company_id], references: [id])
+  created_at DateTime
+  deleted_at DateTime?
+  products   Product_chart_item[]
+  Sale       Sale?
+
+  @@index([company_id], name: "company_id_index")
+}
+
+model Sale {
+  id                     String              @id @default(uuid())
+  company_id             String
+  company                Company             @relation(fields: [company_id], references: [id])
+  value                  Float
+  paid_value             Float               @default(0.00)
+  full_paid              Boolean             @default(false)
+  discount_id            String
+  discount               Discount            @relation(fields: [discount_id], references: [id])
+  customer_id            String?
+  customer               Customer?           @relation(fields: [customer_id], references: [id])
+  user_id                String
+  user                   User                @relation(fields: [user_id], references: [id])
+  product_chart_id       String              @unique
+  product_chart          Product_chart       @relation(fields: [product_chart_id], references: [id])
+  service_order_chart_id String              @unique
+  service_order_chart    Service_order_chart @relation(fields: [service_order_chart_id], references: [id])
+  payments               Payment[]
+  created_at             DateTime
+  updated_at             DateTime?
+  deleted_at             DateTime?
+
+  @@index([company_id], name: "company_id_index")
+  @@index([customer_id], name: "customer_id_index")
+  @@index([user_id], name: "user_id_index")
+}
+
+model Payment_type {
+  id   Int    @id @default(autoincrement())
+  name String @db.VarChar(25)
+}
+
+model Payment {
+  id          String    @id @default(uuid())
+  company_id  String
+  company     Company   @relation(fields: [company_id], references: [id])
+  card_brand  String?   @db.VarChar(25)
+  bank_name   String?   @db.VarChar(25)
+  description String?   @db.VarChar(225)
+  value       Float
+  created_at  DateTime
+  deleted_at  DateTime?
+  sale_id     String
+  sale        Sale      @relation(fields: [sale_id], references: [id])
+  customer_id String?
+  customer    Customer? @relation(fields: [customer_id], references: [id])
+  user_id     String
+  user        User      @relation(fields: [user_id], references: [id])
+
+  @@index([company_id], name: "company_id_index")
+  @@index([sale_id], name: "sale_id_index")
 }

@@ -42,14 +42,20 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         // Desofuscar o token antes de verificar
         const deobfuscatedToken = removeRandomCharsFromToken(token);
         const verifiedUser = this.jwtService.verify(deobfuscatedToken, { secret: process.env.JWT_USER_AUTH_SECRET });
-        request['user'] = verifiedUser;
-        return verifiedUser;
+
+        if (!verifiedUser && !verifiedUser?.userInfo) {
+            throw new UnauthorizedException('Unauthorized');
+        }
+        request['user'] = JSON.parse(verifiedUser?.userInfo);
+
+        return JSON.parse(verifiedUser?.userInfo);
     } catch (error) {
         throw new UnauthorizedException('Unauthorized');
     }
 }
 
 private extractTokenFromHeader(request: Request): string | undefined {
+
     const [type, token] = request.headers.authorization?.split(' ') ?? [];
     if (type === 'Bearer' && token) {
         return token;

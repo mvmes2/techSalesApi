@@ -19,9 +19,8 @@ export class PrismaUserRepository implements UserRepository {
         }
         return PrismaUserMapper.toDomain(foundUser);
     }
-    async update(user: User): Promise<void> {
-        const rawUser = PrismaUserMapper.toPrisma(user);
-        await this.prismaService.user.update({ where: { id: rawUser.id }, data: rawUser });
+    async update(updateInfo: any): Promise<void> {
+        await this.prismaService.user.update({ where: { id: updateInfo.user_id }, data: updateInfo.update });
         return;
     }
     async findByEmail(email: string): Promise<User | null> {

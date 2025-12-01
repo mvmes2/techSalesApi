@@ -6,6 +6,10 @@ import { CompanyRepository } from "@app/repositories/company/company-repository"
 import { PrismaCompanyRepository } from "./prisma/repositories/company/prisma-company-repository";
 import { SessionRepository } from "@app/repositories/session/session-repository";
 import { PrismaSessionRepository } from "./prisma/repositories/session/prisma-session-repository";
+import { CustomerRepository } from "@app/repositories/customer/customer-repository";
+import { PrismaCustomerRepository } from "./prisma/repositories/customer/prisma-customer-repository";
+import { Productrepository } from "@app/repositories/product/product-repository";
+import { PrismaProductRepository } from "./prisma/repositories/product/prisma-product-repository";
 
 
 @Module({
@@ -23,13 +27,23 @@ import { PrismaSessionRepository } from "./prisma/repositories/session/prisma-se
     {
         provide: SessionRepository,
         useClass: PrismaSessionRepository
+    },
+    {
+        provide: CustomerRepository,
+        useClass: PrismaCustomerRepository
+    },
+    {
+        provide: Productrepository,
+        useClass: PrismaProductRepository
     }
 ],
 exports: [
+    PrismaService,
     UserRepository,
     CompanyRepository,
     SessionRepository,
-    PrismaService
+    CustomerRepository,
+    Productrepository
 ]
 })
 export class DatabaseModule {}

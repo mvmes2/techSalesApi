@@ -1,9 +1,8 @@
 Passos para Atualizar o Esquema Prisma e Banco de Dados
 
-    Alterar o Esquema Prisma:
+   1 - Alterar o Esquema Prisma:
 
     Adicione o novo campo cnpj ao modelo Company no arquivo do esquema Prisma (schema.prisma).
-
 
     model Company {
     id          String   @id @default(uuid())
@@ -21,13 +20,13 @@ Passos para Atualizar o Esquema Prisma e Banco de Dados
 }
 
 
-Gerar e Aplicar a Migração:
+2 - Gerar e Aplicar a Migração:
 
 Use o Prisma CLI para criar e aplicar uma nova migração. Isso garantirá que o esquema do banco de dados seja atualizado para incluir o novo campo cnpj.
 
 Execute o comando abaixo para criar uma nova migração:
 
-npx prisma migrate dev --name add-cnpj-to-company
+- npx prisma migrate dev --name add-cnpj-to-company
 
 O Prisma irá:
 
@@ -35,9 +34,14 @@ O Prisma irá:
     Gerar um novo arquivo de migração SQL.
     Aplicar a migração ao banco de dados.
 
-Atualizar o Cliente Prisma:
+3 - Atualizar o Cliente Prisma:
 
 Após criar a migração, atualize o cliente Prisma para refletir as mudanças no esquema:
 
-npx prisma generate
+- npx prisma generate - para syncar as migrations com o prisma
+
+- npx prisma migrate deploy   - para rodar as migrations
+
+
+
 

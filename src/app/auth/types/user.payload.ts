@@ -7,6 +7,7 @@ export interface UserPayload {
     name: string;
     company_id: string;
     company_name: string;
+    company_cnpj: string;
     user_level: number;
     iat?: number;
     exp?: number;

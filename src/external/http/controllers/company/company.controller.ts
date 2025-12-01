@@ -8,6 +8,7 @@ import { UserService } from '@app/use-cases/user/user.service';
 import { UserEmailAlreadyInUse } from '@app/use-cases/user/errors/user-email-already-in-use-error';
 import { LocalAuthGuard } from '@app/auth/guards/local-auth.guard';
 import { JwtAuthGuard } from '@app/auth/guards/jwt-auth.guard';
+import { CompanyOrUserNotExists } from '@app/use-cases/company/errors/company-user-not-exists-error';
 
 @ApiTags('company')
 @Controller('company')
@@ -38,7 +39,8 @@ export class CompanyController {
   @IsPublic()
   @Post('company-user')
   async createCompanyAndUser(@Body() body: CreateCompanyAndUserBody) {
-
+    
+    
     try {
 
       await this.companyService.createCompanyAndUserService(body);
@@ -60,17 +62,21 @@ export class CompanyController {
   async getCompanyAndUser(@Request() req: any) {
 
     try {
-      // await this.companyService.getCompanyAndUserInfoService(body);
-      console.log('qual req? ', req.user)
+
       const newReq = {
         companyId: req.user.company_id,
         userId: req.user.id
       }
       const response = await this.companyService.getCompanyAndUserInfoService(newReq);
       return response;
+      
     } catch (error) {
       console.log('qual o erro? ', error)
+      if (error instanceof CompanyOrUserNotExists) {
+        throw new HttpException(new CompanyOrUserNotExists().message, HttpStatus.UNAUTHORIZED)
+      } else {
         throw new HttpException('Internal server error.', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
     }
   };
 
